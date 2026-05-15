@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="600">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labor-Monitor Berlin: Status & Leistung</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-dark: #1e293b;
+            --accent-blue: #3b82f6;
+            --danger-red: #8b0000;
+            --bg-light: #f8fafc;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #cbd5e1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            margin: 0;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+            text-align: center; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-left { width: 450px; height: 750px; }
+        .card-right { width: 700px; height: 750px; justify-content: space-between; }
+
+        h2 { color: var(--primary-dark); margin-bottom: 5px; font-size: 1.8em; }
+        .subtitle { color: #64748b; margin-bottom: 30px; font-weight: 600; }
+
+        /* --- THERMOMETER STYLE --- */
+        .thermo-layout { display: flex; align-items: center; justify-content: center; height: 500px; position: relative; margin-top: 20px; }
+        
+        .scale { display: flex; flex-direction: column-reverse; justify-content: space-between; height: 450px; margin-right: 20px; font-weight: bold; color: #444; border-right: 3px solid #ddd; padding-right: 15px; font-family: monospace; font-size: 1.1em; }
+
+        .thermo-body { 
+            width: 70px; height: 450px; background: #eee; border-radius: 35px; 
+            border: 5px solid #fff; box-shadow: inset 0 0 15px rgba(0,0,0,0.15), 0 5px 20px rgba(0,0,0,0.2);
+            position: relative; overflow: hidden; 
+        }
+
+        .color-layers { position: absolute; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column-reverse; }
+
+        .thermo-gloss { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(90deg, rgba(255,255,255,0.3) 20%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 90%);
+            z-index: 2; pointer-events: none;
+        }
+
+        .indicator-arrow {
+            position: absolute; left: 95px; width: 130px; height: 50px;
+            background: white; border-radius: 8px; box-shadow: 3px 3px 12px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.4em;
+            transition: bottom 2s ease-in-out; z-index: 5; color: var(--primary-dark);
+        }
+        .indicator-arrow::before {
+            content: ''; position: absolute; left: -20px; top: 12px;
+            border-top: 13px solid transparent; border-bottom: 13px solid transparent;
+            border-right: 20px solid white;
+        }
+
+        /* --- BALKENDIAGRAMM STYLE --- */
+        .chart-container { width: 100%; flex-grow: 1; display: flex; align-items: center; }
+        .total-badge { 
+            background: var(--accent-blue); color: white; padding: 15px 30px; 
+            border-radius: 40px; font-size: 1.5em; font-weight: bold; margin-top: 20px;
+        }
+
+        .reward-info { 
+            margin-top: auto; background: #fffbeb; border: 2px solid #f59e0b; 
+            padding: 15px; border-radius: 12px; color: #b45309; font-weight: bold; width: 90%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card card-left">
+    <h2>Bestand</h2>
+    <div class="subtitle">Standort Berlin</div>
+
+    <div class="thermo-layout">
+        <div class="scale">
+            <span>0</span><span>5k</span><span>10k</span><span>15k</span><span>20k</span>
+        </div>
+
+        <div class="thermo-body">
+            <div class="color-layers">
+                <div style="height: 15%; background: #00b300;"></div>
+                <div style="height: 15%; background: #00ff00;"></div>
+                <div style="height: 20%; background: #ffff00;"></div>
+                <div style="height: 20%; background: #ff9900;"></div>
+                <div style="height: 30%; background: #cc0000;"></div>
+            </div>
+            <div class="thermo-gloss"></div>
+            <div id="overlay" style="position: absolute; top: 0; width: 100%; background: #cbd5e1; transition: height 2s ease-in-out; z-index: 1;"></div>
+        </div>
+
+        <div id="pointer" class="indicator-arrow">15.118</div>
+    </div>
+
+    <div style="font-size: 2.5em; font-weight: bold; color: var(--danger-red); margin-top: 25px;">15.118</div>
+    <p style="color: #64748b; font-weight: 600;">Objektträger unbefundet</p>
+</div>
+
+<div class="card card-right">
+    <h2>Zusatz-Leistung</h2>
+    <div class="subtitle">Extra gescreente Präparate (Woche)</div>
+
+    <div class="chart-container">
+        <canvas id="extraChart"></canvas>
+    </div>
+
+    <div class="total-badge" id="total-sum">+ 0 gesamt</div>
+
+   </div>
+
+<script>
+    // --- DATEN KONFIGURATION ---
+    const aktuellerBestand = 15118;
+    const maxSkala = 20000;
+    const zusatzLeistung = [50, 70, 80, 30, 20, 250, 0]; // Mo - So
+
+    // --- THERMOMETER ANIMATION ---
+    window.onload = function() {
+        const prozent = (aktuellerBestand / maxSkala) * 100;
+        document.getElementById('overlay').style.height = (100 - prozent) + '%';
+        // Positionierung des Pfeils (450px Gesamthöhe)
+        document.getElementById('pointer').style.bottom = (prozent * 4.5 - 25) + 'px';
+
+        // --- CHART INITIALISIERUNG ---
+        const ctx = document.getElementById('extraChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+                datasets: [{
+                    label: 'Zusatz-Präparate',
+                    data: zusatzLeistung,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 8,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 14, weight: 'bold' } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 16, weight: 'bold' } } }
+                }
+            }
+        });
+
+        // Summe berechnen
+        const sum = zusatzLeistung.reduce((a, b) => a + b, 0);
+        document.getElementById('total-sum').innerText = "+ " + sum.toLocaleString() + " gesamt";
+    };
+</script>
+
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+</body>
+</html>
