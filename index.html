@@ -11,47 +11,75 @@
             --primary-dark: #1e293b;
             --accent-blue: #3b82f6;
             --danger-red: #8b0000;
-            --bg-light: #f8fafc;
+            --bg-light: #cbd5e1;
         }
 
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #cbd5e1; 
+            background: var(--bg-light); 
             display: flex; 
+            flex-direction: row; /* Desktop: nebeneinander */
+            flex-wrap: wrap;    /* Erlaubt Umbruch auf Mobilgeräten */
             justify-content: center; 
-            align-items: center; 
+            align-items: flex-start; 
             min-height: 100vh;
             margin: 0;
-            gap: 30px;
+            gap: 20px;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         .card { 
             background: white; 
-            padding: 30px; 
+            padding: 20px; 
             border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
             text-align: center; 
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
+            flex: 1 1 450px; /* Basisbreite 450px, darf wachsen */
+            max-width: 700px;
         }
 
-        .card-left { width: 450px; height: 750px; }
-        .card-right { width: 700px; height: 750px; justify-content: space-between; }
+        h2 { color: var(--primary-dark); margin: 0 0 5px 0; font-size: 1.6em; }
+        .subtitle { color: #64748b; margin-bottom: 20px; font-weight: 600; font-size: 1em; }
 
-        h2 { color: var(--primary-dark); margin-bottom: 5px; font-size: 1.8em; }
-        .subtitle { color: #64748b; margin-bottom: 30px; font-weight: 600; }
-
-        /* --- THERMOMETER STYLE --- */
-        .thermo-layout { display: flex; align-items: center; justify-content: center; height: 500px; position: relative; margin-top: 20px; }
+        /* --- THERMOMETER STYLE (Responsive) --- */
+        .thermo-layout { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 400px; /* Etwas kompakter für Mobile */
+            position: relative; 
+            margin: 20px 0;
+            width: 100%;
+        }
         
-        .scale { display: flex; flex-direction: column-reverse; justify-content: space-between; height: 450px; margin-right: 20px; font-weight: bold; color: #444; border-right: 3px solid #ddd; padding-right: 15px; font-family: monospace; font-size: 1.1em; }
+        .scale { 
+            display: flex; 
+            flex-direction: column-reverse; 
+            justify-content: space-between; 
+            height: 100%; 
+            margin-right: 15px; 
+            font-weight: bold; 
+            color: #444; 
+            border-right: 3px solid #ddd; 
+            padding-right: 10px; 
+            font-family: monospace; 
+            font-size: 1em; 
+        }
 
         .thermo-body { 
-            width: 70px; height: 450px; background: #eee; border-radius: 35px; 
-            border: 5px solid #fff; box-shadow: inset 0 0 15px rgba(0,0,0,0.15), 0 5px 20px rgba(0,0,0,0.2);
-            position: relative; overflow: hidden; 
+            width: 50px; 
+            height: 100%; 
+            background: #eee; 
+            border-radius: 30px; 
+            border: 4px solid #fff; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.2);
+            position: relative; 
+            overflow: hidden; 
         }
 
         .color-layers { position: absolute; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column-reverse; }
@@ -63,35 +91,57 @@
         }
 
         .indicator-arrow {
-            position: absolute; left: 95px; width: 130px; height: 50px;
-            background: white; border-radius: 8px; box-shadow: 3px 3px 12px rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.4em;
-            transition: bottom 2s ease-in-out; z-index: 5; color: var(--primary-dark);
+            position: absolute; 
+            left: 55%; /* Relativ zum Container */
+            width: 100px; 
+            height: 40px;
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 1.1em;
+            transition: bottom 2s ease-in-out; 
+            z-index: 5; 
+            color: var(--primary-dark);
         }
         .indicator-arrow::before {
-            content: ''; position: absolute; left: -20px; top: 12px;
-            border-top: 13px solid transparent; border-bottom: 13px solid transparent;
-            border-right: 20px solid white;
+            content: ''; position: absolute; left: -15px; top: 10px;
+            border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+            border-right: 15px solid white;
         }
 
-        /* --- BALKENDIAGRAMM STYLE --- */
-        .chart-container { width: 100%; flex-grow: 1; display: flex; align-items: center; }
+        /* --- CHART & BADGES --- */
+        .chart-container { width: 100%; position: relative; height: 300px; }
+        
         .total-badge { 
-            background: var(--accent-blue); color: white; padding: 15px 30px; 
-            border-radius: 40px; font-size: 1.5em; font-weight: bold; margin-top: 20px;
+            background: var(--accent-blue); color: white; padding: 12px 25px; 
+            border-radius: 40px; font-size: 1.3em; font-weight: bold; margin-top: 15px;
         }
 
         .reward-info { 
-            margin-top: auto; background: #fffbeb; border: 2px solid #f59e0b; 
-            padding: 15px; border-radius: 12px; color: #b45309; font-weight: bold; width: 90%;
+            margin-top: 20px; background: #fffbeb; border: 2px solid #f59e0b; 
+            padding: 12px; border-radius: 12px; color: #b45309; font-weight: bold; width: 100%;
+            box-sizing: border-box; font-size: 0.9em;
+        }
+
+        /* MEDIA QUERY: Optimierung für schmale Handys */
+        @media (max-width: 500px) {
+            body { padding: 10px; }
+            .card { flex: 1 1 100%; padding: 15px; }
+            .indicator-arrow { width: 80px; font-size: 0.9em; left: 60%; }
+            .thermo-layout { height: 350px; }
+            h2 { font-size: 1.4em; }
         }
     </style>
 </head>
 <body>
 
-<div class="card card-left">
+<div class="card">
     <h2>Bestand</h2>
-    <div class="subtitle">Standort Berlin</div>
+    <div class="subtitle">Berlin</div>
 
     <div class="thermo-layout">
         <div class="scale">
@@ -113,11 +163,11 @@
         <div id="pointer" class="indicator-arrow">15.118</div>
     </div>
 
-    <div style="font-size: 2.5em; font-weight: bold; color: var(--danger-red); margin-top: 25px;">15.118</div>
-    <p style="color: #64748b; font-weight: 600;">Objektträger unbefundet</p>
+    <div style="font-size: 2em; font-weight: bold; color: var(--danger-red); margin-top: 15px;">15.118</div>
+    <p style="color: #64748b; font-weight: 600; margin: 5px 0;">Objektträger unbefundet</p>
 </div>
 
-<div class="card card-right">
+<div class="card">
     <h2>Zusatz-Leistung</h2>
     <div class="subtitle">Extra gescreente Präparate (Woche)</div>
 
@@ -127,52 +177,49 @@
 
     <div class="total-badge" id="total-sum">+ 0 gesamt</div>
 
-   </div>
+</div>
 
 <script>
-    // --- DATEN KONFIGURATION ---
     const aktuellerBestand = 15118;
     const maxSkala = 20000;
-    const zusatzLeistung = [50, 70, 80, 30, 20, 250, 0]; // Mo - So
+    const zusatzLeistung = [450, 520, 480, 600, 380, 0, 0]; 
 
-    // --- THERMOMETER ANIMATION ---
     window.onload = function() {
+        // Thermometer Logik
         const prozent = (aktuellerBestand / maxSkala) * 100;
         document.getElementById('overlay').style.height = (100 - prozent) + '%';
-        // Positionierung des Pfeils (450px Gesamthöhe)
-        document.getElementById('pointer').style.bottom = (prozent * 4.5 - 25) + 'px';
+        
+        // Dynamische Positionierung des Pfeils basierend auf Containerhöhe
+        const thermoHeight = document.querySelector('.thermo-layout').offsetHeight;
+        document.getElementById('pointer').style.bottom = (prozent * (thermoHeight/100) - 20) + 'px';
 
-        // --- CHART INITIALISIERUNG ---
+        // Chart Logik
         const ctx = document.getElementById('extraChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
                 datasets: [{
-                    label: 'Zusatz-Präparate',
                     data: zusatzLeistung,
                     backgroundColor: '#3b82f6',
-                    borderRadius: 8,
-                    barThickness: 40
+                    borderRadius: 5
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 14, weight: 'bold' } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 16, weight: 'bold' } } }
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
                 }
             }
         });
 
-        // Summe berechnen
         const sum = zusatzLeistung.reduce((a, b) => a + b, 0);
         document.getElementById('total-sum').innerText = "+ " + sum.toLocaleString() + " gesamt";
     };
 </script>
-
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 </body>
 </html>
