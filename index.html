@@ -27,6 +27,7 @@
             gap: 20px;
             padding: 20px;
             box-sizing: border-box;
+            position: relative;
         }
 
         .card { 
@@ -41,6 +42,7 @@
             box-sizing: border-box;
             flex: 1 1 450px; /* Basisbreite 450px, darf wachsen */
             max-width: 700px;
+            margin-bottom: 40px; /* Platz für den Footer unten */
         }
 
         h2 { color: var(--primary-dark); margin: 0 0 5px 0; font-size: 1.6em; }
@@ -56,7 +58,7 @@
             margin: 20px 0;
             width: 100%;
         }
-        
+         
         .scale { 
             display: flex; 
             flex-direction: column-reverse; 
@@ -115,22 +117,28 @@
 
         /* --- CHART & BADGES --- */
         .chart-container { width: 100%; position: relative; height: 300px; }
-        
+         
         .total-badge { 
             background: var(--accent-blue); color: white; padding: 12px 25px; 
             border-radius: 40px; font-size: 1.3em; font-weight: bold; margin-top: 15px;
         }
 
-        .reward-info { 
-            margin-top: 20px; background: #fffbeb; border: 2px solid #f59e0b; 
-            padding: 12px; border-radius: 12px; color: #b45309; font-weight: bold; width: 100%;
-            box-sizing: border-box; font-size: 0.9em;
+        /* --- FOOTER FOR TIMESTAMP --- */
+        .footer-timestamp {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #475569;
+            font-size: 0.9em;
+            font-weight: 500;
         }
 
         /* MEDIA QUERY: Optimierung für schmale Handys */
         @media (max-width: 500px) {
-            body { padding: 10px; }
-            .card { flex: 1 1 100%; padding: 15px; }
+            body { padding: 10px; padding-bottom: 50px; }
+            .card { flex: 1 1 100%; padding: 15px; margin-bottom: 20px; }
             .indicator-arrow { width: 80px; font-size: 0.9em; left: 60%; }
             .thermo-layout { height: 350px; }
             h2 { font-size: 1.4em; }
@@ -169,22 +177,44 @@
 
 <div class="card">
     <h2>Zusatz-Leistung</h2>
-    <div class="subtitle">Extra gescreente Präparate (Woche)</div>
+    <!-- Platzhalter ID für die Kalenderwoche hinzugefügt -->
+    <div class="subtitle" id="kw-subtitle">Extra gescreente Präparate (KW --)</div>
 
     <div class="chart-container">
         <canvas id="extraChart"></canvas>
     </div>
 
     <div class="total-badge" id="total-sum">+ 0 gesamt</div>
-
 </div>
+
+<!-- Mittiger Zeitstempel am unteren Ende der Seite -->
+<div class="footer-timestamp" id="live-timestamp">Letzte Aktualisierung: --.--.----, --:--:-- Uhr</div>
 
 <script>
     const aktuellerBestand = 15118;
     const maxSkala = 20000;
     const zusatzLeistung = [450, 520, 480, 600, 380, 0, 0]; 
 
+    // Funktion zur Berechnung der ISO-Kalenderwoche
+    function getISOWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
     window.onload = function() {
+        // 1. Aktuelle Kalenderwoche setzen
+        const heute = new Date();
+        const kw = getISOWeek(heute);
+        document.getElementById('kw-subtitle').innerText = `Extra gescreente Präparate (KW ${kw})`;
+
+        // 2. Zeitstempel der letzten Aktualisierung setzen
+        const optionen = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        const zeitString = heute.toLocaleDateString('de-DE', optionen);
+        document.getElementById('live-timestamp').innerText = `Letzte Aktualisierung: ${zeitString} Uhr`;
+
         // Thermometer Logik
         const prozent = (aktuellerBestand / maxSkala) * 100;
         document.getElementById('overlay').style.height = (100 - prozent) + '%';
