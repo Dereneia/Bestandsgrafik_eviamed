@@ -40,7 +40,7 @@
             flex-direction: column;
             align-items: center;
             box-sizing: border-box;
-            flex: 1 1 400px; /* Basisbreite leicht auf 400px reduziert für 3 Karten nebeneinander */
+            flex: 1 1 400px;
             max-width: 700px;
             margin-bottom: 40px; 
         }
@@ -48,7 +48,7 @@
         h2 { color: var(--primary-dark); margin: 0 0 5px 0; font-size: 1.6em; }
         .subtitle { color: #64748b; margin-bottom: 20px; font-weight: 600; font-size: 1em; }
 
-        /* --- THERMOMETER STYLE (Responsive) --- */
+        /* --- THERMOMETER STYLE --- */
         .thermo-layout { 
             display: flex; 
             align-items: center; 
@@ -135,7 +135,7 @@
             font-weight: 500;
         }
 
-        /* MEDIA QUERY: Optimierung für schmale Handys */
+        /* MEDIA QUERY */
         @media (max-width: 500px) {
             body { padding: 10px; padding-bottom: 50px; }
             .card { flex: 1 1 100%; padding: 15px; margin-bottom: 20px; }
@@ -176,7 +176,7 @@
     <p style="color: #64748b; font-weight: 600; margin: 5px 0;">Objektträger unbefundet</p>
 </div>
 
-<!-- Karte 2: Verlauf letzte Tage aus Google Sheets -->
+<!-- Karte 2: Verlauf letzte Tage -->
 <div class="card">
     <h2>Bestandsverlauf</h2>
     <div class="subtitle">Historie der letzten Tage</div>
@@ -198,7 +198,6 @@
     <div class="total-badge" id="total-sum">+ 0 gesamt</div>
 </div>
 
-<!-- Mittiger Zeitstempel am unteren Ende der Seite -->
 <div class="footer-timestamp" id="live-timestamp">Letzte Aktualisierung: --.--.----, --:--:-- Uhr</div>
 
 <script>
@@ -206,13 +205,12 @@
     const maxSkala = 20000;
     const zusatzLeistung = [30, 30, 20, 20, 20, 60, 0]; 
 
-    // === GOOGLE SHEETS KONFIGURATION ===
-    // Hier wurde dein Link eingefügt!
+    // Dein Google Sheet Link
     const googleSheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTLEqI47Xpfl0lGEPhE7Bu2V-Binn2wqlPg1Es7iolQCVGXz6kaloEwYIwxf8XeCnJgYz9d_rSUySOj/pub?gid=0&single=true&output=csv'; 
     
-    // Platzhalterdaten, falls kein Google Sheet verbunden ist (wird nun überschrieben)
-    let historyLabels = ['Tag -5', 'Tag -4', 'Tag -3', 'Tag -2', 'Gestern', 'Heute'];
-    let historyData = [12000, 12500, 14000, 13800, 13600, 13450];
+    // Arrays für die Daten
+    let historyLabels = [];
+    let historyData = [];
 
     // Funktion zur Berechnung der ISO-Kalenderwoche
     function getISOWeek(date) {
@@ -237,9 +235,10 @@
                     backgroundColor: 'rgba(139, 0, 0, 0.1)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.3, // Macht die Linie geschmeidig
+                    tension: 0.3,
                     pointBackgroundColor: 'var(--danger-red)',
-                    pointRadius: 4
+                    pointRadius: 4,
+                    spanGaps: true // <-- Diese Zeile verbindet Punkte bei Lücken/Wochenenden!
                 }]
             },
             options: {
@@ -266,19 +265,28 @@
                 
                 const rows = csvText.split('\n').map(row => row.split(','));
                 
-                // Setzt voraus, dass Spalte 1 = Datum/Label und Spalte 2 = Wert ist
-                // Die erste Zeile (Index 0) wird als Überschrift ignoriert
                 const fetchedLabels = [];
                 const fetchedData = [];
 
                 for (let i = 1; i < rows.length; i++) {
-                    if (rows[i].length >= 2 && rows[i][0].trim() !== '') {
+                    // Prüfen ob die Spalte A (Datum) existiert und nicht leer ist
+                    if (rows[i].length >= 1 && rows[i][0].trim() !== '') {
                         fetchedLabels.push(rows[i][0].trim());
-                        fetchedData.push(parseFloat(rows[i][1].trim()));
+                        
+                        // Versuche Spalte B (Wert) auszulesen
+                        let valueStr = rows[i].length >= 2 ? rows[i][1].trim() : '';
+                        let parsedValue = parseFloat(valueStr);
+                        
+                        // Wenn keine gültige Zahl gefunden wurde (z.B. Feld leer gelassen), setze null
+                        if (isNaN(parsedValue)) {
+                            fetchedData.push(null);
+                        } else {
+                            fetchedData.push(parsedValue);
+                        }
                     }
                 }
 
-                if (fetchedData.length > 0) {
+                if (fetchedLabels.length > 0) {
                     historyLabels = fetchedLabels;
                     historyData = fetchedData;
                 }
@@ -286,33 +294,26 @@
                 console.error("Fehler beim Laden des Google Sheets:", error);
             }
         }
-        // Zeichne das Diagramm (entweder mit Google- oder Platzhalter-Daten)
         drawHistoryChart();
     }
 
     window.onload = function() {
-        // 1. Aktuelle Kalenderwoche setzen
         const heute = new Date();
         const kw = getISOWeek(heute);
         document.getElementById('kw-subtitle').innerText = `Extra gescreente Präparate (KW ${kw})`;
 
-        // 2. Zeitstempel der letzten Aktualisierung setzen
         const optionen = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
         const zeitString = heute.toLocaleDateString('de-DE', optionen);
         document.getElementById('live-timestamp').innerText = `Letzte Aktualisierung: ${zeitString} Uhr`;
 
-        // Thermometer Logik
         const prozent = (aktuellerBestand / maxSkala) * 100;
         document.getElementById('overlay').style.height = (100 - prozent) + '%';
         
-        // Dynamische Positionierung des Pfeils basierend auf Containerhöhe
         const thermoHeight = document.querySelector('.thermo-layout').offsetHeight;
         document.getElementById('pointer').style.bottom = (prozent * (thermoHeight/100) - 20) + 'px';
 
-        // Lade die Google Sheets Daten und zeichne das Verlaufs-Diagramm
         fetchGoogleSheetsData();
 
-        // Bestehendes Balkendiagramm (Zusatz-Leistung)
         const ctxExtra = document.getElementById('extraChart').getContext('2d');
         new Chart(ctxExtra, {
             type: 'bar',
